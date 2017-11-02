@@ -2,7 +2,7 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=icon.ico
 #AutoIt3Wrapper_Res_Description=Xbox Controller Battery Watcher
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.0
+#AutoIt3Wrapper_Res_Fileversion=1.1.0.0
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerFullSmall.jpg, rt_rcdata, iconFull
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerMediumSmall.jpg, rt_rcdata, iconMedium
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerLowSmall.jpg, rt_rcdata, iconLow
@@ -138,7 +138,7 @@ while 1
     if TimerDiff( $tStart ) >= $POLLING_DELAY then
 
 		; get battery info
-		$batteryInfo = XboxGetBatteryLevel( 0 )
+		$batteryInfo = XboxGetBatteryLevel()
 
 		if $batteryInfo[0] == $XBOX_CONTROLLER_TYPE_DISCONNECTED or $batteryInfo[0] == $XBOX_CONTROLLER_TYPE_WIRED then
 
@@ -239,13 +239,23 @@ endfunc
 
 
 
-func XboxGetBatteryLevel( $controllerIndex )
-	dim $return[2]
+func XboxGetBatteryLevel()
+	dim $return[3]
+	$return[0] = $XBOX_CONTROLLER_TYPE_DISCONNECTED
+	$return[1] = $XBOX_CONTROLLER_LEVEL_EMPTY
+	$return[2] = -1
+	$controllerIndex = 0
 	$struct = DllStructCreate( "byte type;byte level" )
 	$pointer = DllStructGetPtr( $struct )
-	DllCall( "xinput1_3.dll", "dword", "XInputGetBatteryInformation", "dword", $controllerIndex, "byte", 0x00, "ptr", $pointer )
-	$return[0] = DllStructGetData( $struct, "type" )
-	$return[1] = DllStructGetData( $struct, "level" )
+	for $controllerIndex = 0 to 3
+		DllCall( "xinput1_3.dll", "dword", "XInputGetBatteryInformation", "dword", $controllerIndex, "byte", 0x00, "ptr", $pointer )
+		$return[0] = DllStructGetData( $struct, "type" )
+		if $return[0] <> $XBOX_CONTROLLER_TYPE_DISCONNECTED then
+			$return[1] = DllStructGetData( $struct, "level" )
+			$return[2] = $controllerIndex
+			ExitLoop
+		endif
+	next
 	return $return
 endfunc
 
