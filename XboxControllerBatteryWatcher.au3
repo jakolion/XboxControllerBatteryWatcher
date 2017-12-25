@@ -2,7 +2,7 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=icon.ico
 #AutoIt3Wrapper_Res_Description=Xbox Controller Battery Watcher
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.0
+#AutoIt3Wrapper_Res_Fileversion=1.2.0.0
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerFullSmall.jpg, rt_rcdata, iconFull
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerMediumSmall.jpg, rt_rcdata, iconMedium
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerLowSmall.jpg, rt_rcdata, iconLow
@@ -27,6 +27,9 @@ const $XBOX_CONTROLLER_LEVEL_EMPTY = 0
 const $XBOX_CONTROLLER_LEVEL_LOW = 1
 const $XBOX_CONTROLLER_LEVEL_MEDIUM = 2
 const $XBOX_CONTROLLER_LEVEL_FULL = 3
+
+const $AUTOSTART_REGISTRY_PATH = "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run"
+const $AUTOSTART_REGISTRY_NAME = "XboxControllerBatteryWatcher"
 
 const $POLLING_DELAY = 5000
 const $MESSAGE_SHOW_DELAY = 10000
@@ -58,23 +61,32 @@ const $SHOW_INFO_ON_FULLSCREEN_EXIT = false
 
 Opt( "GUIOnEventMode", 1 )
 global $formWidth = 450
-global $formHeight = 80
-global $distanceFromBottom = 60
+local $formHeight = 82
+local $distanceFromBottom = 60
+local $iconSize = 80
 local $labelHeight = 22
 local $bordersVertical = 10
 local $bordersHorizontal = 15
 ; form
-global $gui = GUICreate( "", $formWidth, $formHeight, @DesktopWidth-$formWidth, @DesktopHeight-$formHeight-$distanceFromBottom, BitOR( $WS_POPUPWINDOW, $WS_CLIPCHILDREN ), BitOR( $WS_EX_TOPMOST, $WS_EX_TOOLWINDOW ) )
+global $gui = GUICreate( "", $formWidth, $formHeight, @DesktopWidth-$formWidth, @DesktopHeight-$formHeight-$distanceFromBottom, BitOR( $WS_POPUP, $WS_CLIPCHILDREN ), BitOR( $WS_EX_TOPMOST, $WS_EX_TOOLWINDOW ) )
 GUISetBkColor( 0x222222, $gui )
 GUISetOnEvent( $GUI_EVENT_PRIMARYDOWN, "FadeOutClick", $gui )
+; border left
+GUICtrlCreateGraphic( 0, 0, 1, $formHeight, $SS_BLACKRECT )
+GUICtrlSetBkColor( -1, 0xaaaaaa )
+; border top
+GUICtrlCreateGraphic( 0, 0, $formWidth, 1, $SS_BLACKRECT )
+GUICtrlSetBkColor( -1, 0xaaaaaa )
+; border bottom
+GUICtrlCreateGraphic( 0, $formHeight - 1, $formWidth, 1, $SS_BLACKRECT )
+GUICtrlSetBkColor( -1, 0xaaaaaa )
 ; x
 global $labelX = GUICtrlCreateLabel( "x", $formWidth - 35, 0, 20, $formHeight, $WS_CLIPSIBLINGS )
 GUICtrlSetColor( -1, 0xaaaaaa )
 GUICtrlSetFont( -1, 20, 0, 0, "Segoe UI", 0 )
 GUICtrlSetStyle( -1, $SS_RIGHT )
 ; icon
-local $iconSize = $formHeight
-global $icon = GUICtrlCreatePic( "", $bordersHorizontal, 0, $iconSize, $iconSize )
+global $icon = GUICtrlCreatePic( "", $bordersHorizontal, ( ( $formHeight - $iconSize ) / 2 ), $iconSize, $iconSize )
 ; label top
 global $labelTop = GUICtrlCreateLabel( "", $bordersHorizontal + $iconSize + $bordersHorizontal, $bordersVertical, $formWidth - 2 * $bordersHorizontal, $labelHeight, $WS_CLIPSIBLINGS )
 GUICtrlSetColor( -1, 0xffffff )
@@ -110,6 +122,12 @@ TrayCreateItem( "Xbox Controller Battery Watcher " & GetVersion() )
 TrayItemSetState( -1, $TRAY_DISABLE )
 Local $statusTrayItem = TrayCreateItem( " " )
 TrayItemSetState( -1, $TRAY_DISABLE )
+TrayCreateItem( "" )
+Local $autostartItem = TrayCreateItem( "Autostart" )
+TrayItemSetOnEvent( -1, "AutostartClicked" )
+if GetAutostart() then
+	TrayItemSetState( -1, $TRAY_CHECKED )
+endif
 TrayCreateItem( "" )
 TrayCreateItem( "Exit" )
 TrayItemSetOnEvent( -1, "ExitScript" )
@@ -292,16 +310,12 @@ func Level2Icon( $batteryLevel )
 	switch $batteryLevel
 		case $XBOX_CONTROLLER_LEVEL_EMPTY
 			$icon = "iconEmpty"
-			;$icon = "iconController\iconControllerEmptySmall.jpg"
 		case $XBOX_CONTROLLER_LEVEL_LOW
 			$icon = "iconLow"
-			;$icon = "iconController\iconControllerLowSmall.jpg"
 		case $XBOX_CONTROLLER_LEVEL_MEDIUM
 			$icon = "iconMedium"
-			;$icon = "iconController\iconControllerMediumSmall.jpg"
 		case $XBOX_CONTROLLER_LEVEL_FULL
 			$icon = "iconFull"
-			;$icon = "iconController\iconControllerFullSmall.jpg"
 	endswitch
 	return $icon
 endfunc
@@ -313,17 +327,13 @@ func ShowInfo( $text, $batteryLevel )
 	AdlibUnRegister( "FadeOutToTransparentTimer" )
 	local $fadeOutAfterTimer = true
 	local $x = $GUI_HIDE
-	;local $icon = $TIP_ICONASTERISK
 	local $textAddition = ""
 	if $batteryLevel == $XBOX_CONTROLLER_LEVEL_EMPTY or $batteryLevel == $XBOX_CONTROLLER_LEVEL_LOW then
 		$fadeOutAfterTimer = false
 		$x = $GUI_SHOW
-		;$icon = $TIP_ICONEXCLAMATION
 		$textAddition = "!"
 	endif
-	;TrayTip( $text, _StringProper( Level2Text( $batteryLevel ) ) & $textAddition, $fadeOutAfterTimer/1000, $icon ) ;$TIP_ICONNONE ;$TIP_ICONASTERISK ;$TIP_ICONEXCLAMATION
 
-	;GUICtrlSetImage( $icon, Level2Icon( $batteryLevel ) )
 	_ResourceSetImageToCtrl( $icon, Level2Icon( $batteryLevel ) )
 	GUICtrlSetData( $labelTop, $text )
 	GUICtrlSetData( $labelBottom, _StringProper( Level2Text( $batteryLevel ) ) & $textAddition )
@@ -415,10 +425,51 @@ endfunc
 
 
 
-func ExitScript()
-    Exit( 0 )
+func AutostartClicked()
+	SetAutostart ( not GetAutostart() )
+	if GetAutostart() then
+		TrayItemSetState( $autostartItem, $TRAY_CHECKED )
+	else
+		TrayItemSetState( $autostartItem, $TRAY_UNCHECKED )
+	endif
 endfunc
 
 
 
+func GetApplicationPath()
+	return @AutoItExe
+endfunc
 
+
+
+func GetAutostart()
+	local $path = RegRead( $AUTOSTART_REGISTRY_PATH, $AUTOSTART_REGISTRY_NAME )
+	if $path == "" Then
+		return false
+	else
+		if $path == GetApplicationPath() then
+			return true
+		else
+			SetAutostart( true )
+			return true
+		endif
+	endif
+endfunc
+
+
+
+func SetAutostart( $enable )
+	if $enable then
+		if StringRight( GetApplicationPath(), 16 ) <> "\autoit3_x64.exe" then
+			RegWrite( $AUTOSTART_REGISTRY_PATH, $AUTOSTART_REGISTRY_NAME, "REG_SZ", GetApplicationPath() )
+		endif
+	else
+		RegDelete( $AUTOSTART_REGISTRY_PATH, $AUTOSTART_REGISTRY_NAME )
+	endif
+endfunc
+
+
+
+func ExitScript()
+    Exit( 0 )
+endfunc
