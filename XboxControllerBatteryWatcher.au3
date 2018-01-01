@@ -2,7 +2,7 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=icon.ico
 #AutoIt3Wrapper_Res_Description=Xbox Controller Battery Watcher
-#AutoIt3Wrapper_Res_Fileversion=1.2.0.0
+#AutoIt3Wrapper_Res_Fileversion=1.3.0.0
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerFullSmall.jpg, rt_rcdata, iconFull
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerMediumSmall.jpg, rt_rcdata, iconMedium
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerLowSmall.jpg, rt_rcdata, iconLow
@@ -81,7 +81,7 @@ GUICtrlSetBkColor( -1, 0xaaaaaa )
 GUICtrlCreateGraphic( 0, $formHeight - 1, $formWidth, 1, $SS_BLACKRECT )
 GUICtrlSetBkColor( -1, 0xaaaaaa )
 ; x
-global $labelX = GUICtrlCreateLabel( "x", $formWidth - 35, 0, 20, $formHeight, $WS_CLIPSIBLINGS )
+global $labelX = GUICtrlCreateLabel( "x", $formWidth - 35, 1, 20, $formHeight - 2, $WS_CLIPSIBLINGS )
 GUICtrlSetColor( -1, 0xaaaaaa )
 GUICtrlSetFont( -1, 20, 0, 0, "Segoe UI", 0 )
 GUICtrlSetStyle( -1, $SS_RIGHT )
