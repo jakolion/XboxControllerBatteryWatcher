@@ -2,7 +2,7 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=icon.ico
 #AutoIt3Wrapper_Res_Description=Xbox Controller Battery Watcher
-#AutoIt3Wrapper_Res_Fileversion=1.3.0.0
+#AutoIt3Wrapper_Res_Fileversion=1.4.0.0
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerFullSmall.jpg, rt_rcdata, iconFull
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerMediumSmall.jpg, rt_rcdata, iconMedium
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerLowSmall.jpg, rt_rcdata, iconLow
@@ -11,11 +11,13 @@
 
 ;#include <Array.au3>
 #include <TrayConstants.au3>
+#include <AutoItConstants.au3>
 #include <String.au3>
 #include <GUIConstantsEx.au3>
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 #include <Timers.au3>
+#include <FileConstants.au3>
 #include <resources.au3>
 
 const $XBOX_CONTROLLER_TYPE_DISCONNECTED = 0
@@ -43,6 +45,39 @@ const $FADING_IN_SPEED = 500
 const $FADING_OUT_SPEED = 250
 const $FADING_IN_STEPS_PER_REFRESH = $FADING_STEPS / ( $FADING_IN_SPEED / $FADING_REFRESH_RATE )
 const $FADING_OUT_STEPS_PER_REFRESH = $FADING_STEPS / ( $FADING_OUT_SPEED / $FADING_REFRESH_RATE )
+
+const $INI_FILE_NAME = "XboxControllerBatteryWatcher.ini"
+const $INI_HOTKEY_ENABLED_NAME = "enabled"
+const $INI_HOTKEY_SECTION_NAME = "hotkey"
+const $INI_HOTKEY_KEYS_NAME = "keys"
+const $INI_HOTKEY_COMMAND_NAME = "command"
+
+const $INI_DEFAULT_TEXT = "" & _
+"; Xbox Controller Battery Watcher settings" & @CRLF & _
+";" & @CRLF & _
+"; Values for Xbox Controller buttons:" & @CRLF & _
+";" & @CRLF & _
+"; GAMEPAD_DPAD_UP         0x0001" & @CRLF & _
+"; GAMEPAD_DPAD_DOWN       0x0002" & @CRLF & _
+"; GAMEPAD_DPAD_LEFT       0x0004" & @CRLF & _
+"; GAMEPAD_DPAD_RIGHT      0x0008" & @CRLF & _
+"; GAMEPAD_START           0x0010" & @CRLF & _
+"; GAMEPAD_BACK            0x0020" & @CRLF & _
+"; GAMEPAD_LEFT_THUMB      0x0040" & @CRLF & _
+"; GAMEPAD_RIGHT_THUMB     0x0080" & @CRLF & _
+"; GAMEPAD_LEFT_SHOULDER   0x0100" & @CRLF & _
+"; GAMEPAD_RIGHT_SHOULDER  0x0200" & @CRLF & _
+"; GAMEPAD_A =             0x1000" & @CRLF & _
+"; GAMEPAD_B =             0x2000" & @CRLF & _
+"; GAMEPAD_X =             0x4000" & @CRLF & _
+"; GAMEPAD_Y =             0x8000" & @CRLF & _
+";" & @CRLF & _
+"; For button combinations sum their values" & @CRLF & _
+"" & @CRLF
+global $iniHotkeyEnabled = 0
+global $iniHotkeyKeys = 0x11
+global $iniHotkeyCommand = "start steam://open/bigpicture"
+global $hotkeyPressed = false
 
 global $fadingStatus = ""
 global $fadingTarget = $FADING_TARGET_HIDE
@@ -129,6 +164,9 @@ if GetAutostart() then
 	TrayItemSetState( -1, $TRAY_CHECKED )
 endif
 TrayCreateItem( "" )
+TrayCreateItem( "Reload settings file" )
+TrayItemSetOnEvent( -1, "ReadIni" )
+TrayCreateItem( "" )
 TrayCreateItem( "Exit" )
 TrayItemSetOnEvent( -1, "ExitScript" )
 
@@ -145,12 +183,20 @@ local $storedText
 local $storedBatteryLevel
 local $waitingForMouseOver = false
 
+;HotKeySet( "{ESC}", "ExitScript" )
+ReadIni()
+
 while 1
 
-	if $currentWinTrans <> 0 then
-		Sleep( 100 )
+	if $iniHotkeyEnabled then
+		Sleep( 50 )
+		CheckHotkey()
 	else
-		Sleep( 1000 )
+		if $currentWinTrans <> 0 then
+			Sleep( 100 )
+		else
+			Sleep( 1000 )
+		endif
 	endif
 
     if TimerDiff( $tStart ) >= $POLLING_DELAY then
@@ -249,10 +295,63 @@ func OtherInstanceExists()
 	;_ArrayDisplay( $processList, @AutoItPID )
 	for $i = 1 to UBound( $processList ) - 1
 		if $processList[$i][1] <> @AutoItPID then
-			; Found another process
+			; found another process
 			return true
 		endif
 	next
+endfunc
+
+
+
+func ReadIni()
+	if FileExists( $INI_FILE_NAME ) then
+		; read ini file
+		$iniHotkeyEnabled = Number( IniRead( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_ENABLED_NAME, "" ) )
+		$iniHotkeyKeys = Number( IniRead( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_KEYS_NAME, "" ) )
+		$iniHotkeyCommand = IniRead( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_COMMAND_NAME, "" )
+	else
+		; create default ini file
+		$hFileOpen = FileOpen( $INI_FILE_NAME, $FO_APPEND )
+		if $hFileOpen <> -1 then
+			FileWrite( $hFileOpen, $INI_DEFAULT_TEXT )
+			FileClose( $hFileOpen )
+			IniWrite( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_ENABLED_NAME, $iniHotkeyEnabled )
+			IniWrite( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_KEYS_NAME, "0x" & Hex( $iniHotkeyKeys, 4 ) )
+			IniWrite( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_COMMAND_NAME, $iniHotkeyCommand )
+		endif
+	endif
+endfunc
+
+
+
+func XboxButtonIsPressed( $iKey )
+    local $hStruct, $iValue = 0
+    $hStruct = DllStructCreate( "dword;short;ubyte;ubyte;short;short;short;short" )
+    if DllCall( "xinput1_3.dll", "long", "XInputGetState", "long", 0, "ptr", DllStructGetPtr( $hStruct ) ) = 0 then return SetError( 5, 0, false )
+    if @error then return SetError(@error, @extended, false)
+    select
+        case $iKey < 16385
+            return Number( BitXOR( $iKey, DllStructGetData( $hStruct, 2 ) ) = 0 )
+        case $iKey = 32768
+            $iValue = DllStructGetData( $hStruct, 3 )
+            if $iValue > 10 then return SetError( 0, $iValue, 1 )
+        case $iKey = 65536
+            $iValue = DllStructGetData( $hStruct, 4 )
+            if $iValue > 10 then return SetError( 0, $iValue, 1 )
+        case $iKey = 131072
+            $iValue = DllStructGetData( $hStruct, 5 )
+            if $iValue > 10000 or $iValue < -10000 then return SetError( 0, $iValue, 1 )
+        case $iKey = 262144
+            $iValue = DllStructGetData( $hStruct, 6 )
+            if $iValue > 10000 or $iValue < -10000 then return SetError( 0, $iValue, 1 )
+        case $iKey = 524288
+            $iValue = DllStructGetData( $hStruct, 7 )
+            if $iValue > 10000 or $iValue < -10000 then return SetError( 0, $iValue, 1 )
+        case $iKey = 1048576
+            $iValue = DllStructGetData( $hStruct, 8 )
+            if $iValue > 10000 or $iValue < -10000 then return SetError( 0, $iValue, 1 )
+    endselect
+    return SetError( 0, $iValue, 0 )
 endfunc
 
 
@@ -275,6 +374,19 @@ func XboxGetBatteryLevel()
 		endif
 	next
 	return $return
+endfunc
+
+
+
+func CheckHotkey()
+	if $iniHotkeyKeys > 0 and $iniHotkeyEnabled > 0 then
+		if XboxButtonIsPressed( $iniHotkeyKeys ) and not $hotkeyPressed then
+			$hotkeyPressed = true
+			Run( @ComSpec & " /c " & $iniHotkeyCommand, "", @SW_HIDE )
+		elseif $hotkeyPressed and not XboxButtonIsPressed( $iniHotkeyKeys ) then
+			$hotkeyPressed = false
+		endif
+	endif
 endfunc
 
 
@@ -357,6 +469,9 @@ func GuiFade()
 	while $fadingStatus <> ""
 
 		while $fadingStatus == "in"
+			if $iniHotkeyEnabled then
+				CheckHotkey()
+			endif
 			if $currentWinTrans <= $fadingTarget then
 				$currentWinTrans += $FADING_IN_STEPS_PER_REFRESH
 			endif
@@ -372,6 +487,9 @@ func GuiFade()
 		wend
 
 		while $fadingStatus == "out"
+			if $iniHotkeyEnabled then
+				CheckHotkey()
+			endif
 			if $currentWinTrans >= $fadingTarget then
 				$currentWinTrans -= $FADING_OUT_STEPS_PER_REFRESH
 			endif
