@@ -2,7 +2,7 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=icon.ico
 #AutoIt3Wrapper_Res_Description=Xbox Controller Battery Watcher
-#AutoIt3Wrapper_Res_Fileversion=1.5.0.0
+#AutoIt3Wrapper_Res_Fileversion=1.4.0.0
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerFullSmall.jpg, rt_rcdata, iconFull
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerMediumSmall.jpg, rt_rcdata, iconMedium
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerLowSmall.jpg, rt_rcdata, iconLow
@@ -11,13 +11,11 @@
 
 ;#include <Array.au3>
 #include <TrayConstants.au3>
-#include <AutoItConstants.au3>
 #include <String.au3>
 #include <GUIConstantsEx.au3>
 #include <StaticConstants.au3>
 #include <WindowsConstants.au3>
 #include <Timers.au3>
-#include <FileConstants.au3>
 #include <resources.au3>
 
 const $XBOX_CONTROLLER_TYPE_DISCONNECTED = 0
@@ -164,9 +162,6 @@ if GetAutostart() then
 	TrayItemSetState( -1, $TRAY_CHECKED )
 endif
 TrayCreateItem( "" )
-TrayCreateItem( "Reload settings file" )
-TrayItemSetOnEvent( -1, "ReadIni" )
-TrayCreateItem( "" )
 TrayCreateItem( "Exit" )
 TrayItemSetOnEvent( -1, "ExitScript" )
 
@@ -184,20 +179,10 @@ local $storedBatteryLevel
 local $waitingForMouseOver = false
 
 ;HotKeySet( "{ESC}", "ExitScript" )
-ReadIni()
 
 while 1
 
-	if $iniHotkeyEnabled then
-		Sleep( 50 )
-		CheckHotkey()
-	else
-		if $currentWinTrans <> 0 then
-			Sleep( 100 )
-		else
-			Sleep( 1000 )
-		endif
-	endif
+	Sleep( 1000 )
 
     if TimerDiff( $tStart ) >= $POLLING_DELAY then
 
@@ -469,9 +454,6 @@ func GuiFade()
 	while $fadingStatus <> ""
 
 		while $fadingStatus == "in"
-			if $iniHotkeyEnabled then
-				CheckHotkey()
-			endif
 			if $currentWinTrans <= $fadingTarget then
 				$currentWinTrans += $FADING_IN_STEPS_PER_REFRESH
 			endif
@@ -487,9 +469,6 @@ func GuiFade()
 		wend
 
 		while $fadingStatus == "out"
-			if $iniHotkeyEnabled then
-				CheckHotkey()
-			endif
 			if $currentWinTrans >= $fadingTarget then
 				$currentWinTrans -= $FADING_OUT_STEPS_PER_REFRESH
 			endif
