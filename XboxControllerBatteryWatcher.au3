@@ -2,7 +2,7 @@
 #Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_Icon=icon.ico
 #AutoIt3Wrapper_Res_Description=Xbox Controller Battery Watcher
-#AutoIt3Wrapper_Res_Fileversion=1.4.0.0
+#AutoIt3Wrapper_Res_Fileversion=1.5.0.0
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerFullSmall.jpg, rt_rcdata, iconFull
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerMediumSmall.jpg, rt_rcdata, iconMedium
 #AutoIt3Wrapper_Res_File_Add=iconController\iconControllerLowSmall.jpg, rt_rcdata, iconLow
@@ -304,20 +304,20 @@ endfunc
 
 
 func ReadIni()
-	if FileExists( $INI_FILE_NAME ) then
+	if FileExists( @ScriptDir & "\" & $INI_FILE_NAME ) then
 		; read ini file
-		$iniHotkeyEnabled = Number( IniRead( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_ENABLED_NAME, "" ) )
-		$iniHotkeyKeys = Number( IniRead( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_KEYS_NAME, "" ) )
-		$iniHotkeyCommand = IniRead( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_COMMAND_NAME, "" )
+		$iniHotkeyEnabled = Number( IniRead( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_ENABLED_NAME, "" ) )
+		$iniHotkeyKeys = Number( IniRead( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_KEYS_NAME, "" ) )
+		$iniHotkeyCommand = IniRead( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_COMMAND_NAME, "" )
 	else
 		; create default ini file
-		$hFileOpen = FileOpen( $INI_FILE_NAME, $FO_APPEND )
+		$hFileOpen = FileOpen( @ScriptDir & "\" & $INI_FILE_NAME, $FO_OVERWRITE )
 		if $hFileOpen <> -1 then
 			FileWrite( $hFileOpen, $INI_DEFAULT_TEXT )
 			FileClose( $hFileOpen )
-			IniWrite( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_ENABLED_NAME, $iniHotkeyEnabled )
-			IniWrite( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_KEYS_NAME, "0x" & Hex( $iniHotkeyKeys, 4 ) )
-			IniWrite( $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_COMMAND_NAME, $iniHotkeyCommand )
+			IniWrite( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_ENABLED_NAME, $iniHotkeyEnabled )
+			IniWrite( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_KEYS_NAME, "0x" & Hex( $iniHotkeyKeys, 4 ) )
+			IniWrite( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME, $INI_HOTKEY_COMMAND_NAME, $iniHotkeyCommand )
 		endif
 	endif
 endfunc
@@ -382,7 +382,7 @@ func CheckHotkey()
 	if $iniHotkeyKeys > 0 and $iniHotkeyEnabled > 0 then
 		if XboxButtonIsPressed( $iniHotkeyKeys ) and not $hotkeyPressed then
 			$hotkeyPressed = true
-			Run( @ComSpec & " /c " & $iniHotkeyCommand, "", @SW_HIDE )
+			Run( @ComSpec & " /c " & $iniHotkeyCommand, @ScriptDir, @SW_HIDE )
 		elseif $hotkeyPressed and not XboxButtonIsPressed( $iniHotkeyKeys ) then
 			$hotkeyPressed = false
 		endif
