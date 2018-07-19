@@ -163,6 +163,8 @@ TrayCreateItem( "Xbox Controller Battery Watcher " & GetVersion() )
 TrayItemSetState( -1, $TRAY_DISABLE )
 Local $statusTrayItem = TrayCreateItem( " " )
 TrayItemSetState( -1, $TRAY_DISABLE )
+Local $hotkeysStatusTrayItem = TrayCreateItem( " " )
+TrayItemSetState( -1, $TRAY_DISABLE )
 TrayCreateItem( "" )
 Local $autostartItem = TrayCreateItem( "Autostart" )
 TrayItemSetOnEvent( -1, "AutostartClicked" )
@@ -339,6 +341,11 @@ func ReadIni()
 			IniWrite( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME & "X", $INI_HOTKEY_KEYS_NAME, "0x" & Hex( $INI_HOTKEY_KEYS_DEFAULT, 4 ) )
 			IniWrite( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME & "X", $INI_HOTKEY_COMMAND_NAME, $INI_HOTKEY_COMMAND_DEFAULT )
 		endif
+	endif
+	if Ubound( $hotkeyList ) > 0 then
+		TrayItemSetText( $hotkeysStatusTrayItem, "Hotkeys: enabled" )
+	else
+		TrayItemSetText( $hotkeysStatusTrayItem, "Hotkeys: disabled" )
 	endif
 endfunc
 
