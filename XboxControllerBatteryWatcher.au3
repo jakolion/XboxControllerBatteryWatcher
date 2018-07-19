@@ -54,44 +54,47 @@ const $INI_HOTKEY_COMMAND_NAME = "command"
 const $INI_HOTKEY_COMMAND_DEFAULT = "start steam://open/bigpicture"
 
 const $INI_HEADER_TEXT = "" & _
-";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;" & @CRLF & _
-";;                                              ;;" & @CRLF & _
-";;  Xbox Controller Battery Watcher Hotkeys     ;;" & @CRLF & _
-";;  =======================================     ;;" & @CRLF & _
-";;                                              ;;" & @CRLF & _
-";;  These are the values for the Xbox           ;;" & @CRLF & _
-";;  Controller buttons:                         ;;" & @CRLF & _
-";;                                              ;;" & @CRLF & _
-";;  GAMEPAD_DPAD_UP         0x0001              ;;" & @CRLF & _
-";;  GAMEPAD_DPAD_DOWN       0x0002              ;;" & @CRLF & _
-";;  GAMEPAD_DPAD_LEFT       0x0004              ;;" & @CRLF & _
-";;  GAMEPAD_DPAD_RIGHT      0x0008              ;;" & @CRLF & _
-";;  GAMEPAD_START           0x0010              ;;" & @CRLF & _
-";;  GAMEPAD_BACK            0x0020              ;;" & @CRLF & _
-";;  GAMEPAD_LEFT_THUMB      0x0040              ;;" & @CRLF & _
-";;  GAMEPAD_RIGHT_THUMB     0x0080              ;;" & @CRLF & _
-";;  GAMEPAD_LEFT_SHOULDER   0x0100              ;;" & @CRLF & _
-";;  GAMEPAD_RIGHT_SHOULDER  0x0200              ;;" & @CRLF & _
-";;  GAMEPAD_A =             0x1000              ;;" & @CRLF & _
-";;  GAMEPAD_B =             0x2000              ;;" & @CRLF & _
-";;  GAMEPAD_X =             0x4000              ;;" & @CRLF & _
-";;  GAMEPAD_Y =             0x8000              ;;" & @CRLF & _
-";;                                              ;;" & @CRLF & _
-";;  For setting up combinations of buttons you  ;;" & @CRLF & _
-";;  have to sum the corresponding values.       ;;" & @CRLF & _
-";;  The following example starts Steam in Big   ;;" & @CRLF & _
-";;  Picture mode when pressing and holding      ;;" & @CRLF & _
-";;  START and DPAD_UP for a second:             ;;" & @CRLF & _
-";;                                              ;;" & @CRLF & _
-";;  [hotkey1]                                   ;;" & @CRLF & _
-";;  keys=0x0011                                 ;;" & @CRLF & _
-";;  command=start steam://open/bigpicture       ;;" & @CRLF & _
-";;                                              ;;" & @CRLF & _
-";;  For additional hotkeys you have to create   ;;" & @CRLF & _
-";;  sections with continuous numeration like    ;;" & @CRLF & _
-";;  [hotkey2], [hotkey3] and so on.             ;;" & @CRLF & _
-";;                                              ;;" & @CRLF & _
-";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;" & @CRLF & _
+";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;" & @CRLF & _
+";;                                                    ;;" & @CRLF & _
+";;  Xbox Controller Battery Watcher Hotkeys           ;;" & @CRLF & _
+";;  =======================================           ;;" & @CRLF & _
+";;                                                    ;;" & @CRLF & _
+";;  In this file you can define multiple hotkeys for  ;;" & @CRLF & _
+";;  the Xbox Controller. The buttons have to be       ;;" & @CRLF & _
+";;  pressed and hold for a second in order to be      ;;" & @CRLF & _
+";;  detected.                                         ;;" & @CRLF & _
+";;  These are the values for the buttons:             ;;" & @CRLF & _
+";;                                                    ;;" & @CRLF & _
+";;  GAMEPAD_DPAD_UP          0x0001                   ;;" & @CRLF & _
+";;  GAMEPAD_DPAD_DOWN        0x0002                   ;;" & @CRLF & _
+";;  GAMEPAD_DPAD_LEFT        0x0004                   ;;" & @CRLF & _
+";;  GAMEPAD_DPAD_RIGHT       0x0008                   ;;" & @CRLF & _
+";;  GAMEPAD_START            0x0010                   ;;" & @CRLF & _
+";;  GAMEPAD_BACK             0x0020                   ;;" & @CRLF & _
+";;  GAMEPAD_LEFT_THUMB       0x0040                   ;;" & @CRLF & _
+";;  GAMEPAD_RIGHT_THUMB      0x0080                   ;;" & @CRLF & _
+";;  GAMEPAD_LEFT_SHOULDER    0x0100                   ;;" & @CRLF & _
+";;  GAMEPAD_RIGHT_SHOULDER   0x0200                   ;;" & @CRLF & _
+";;  GAMEPAD_A =              0x1000                   ;;" & @CRLF & _
+";;  GAMEPAD_B =              0x2000                   ;;" & @CRLF & _
+";;  GAMEPAD_X =              0x4000                   ;;" & @CRLF & _
+";;  GAMEPAD_Y =              0x8000                   ;;" & @CRLF & _
+";;                                                    ;;" & @CRLF & _
+";;  For setting up combinations of buttons you have   ;;" & @CRLF & _
+";;  to sum the corresponding values.                  ;;" & @CRLF & _
+";;  The following example starts Steam in Big         ;;" & @CRLF & _
+";;  Picture mode when pressing and holding START      ;;" & @CRLF & _
+";;  and DPAD_UP for a second:                         ;;" & @CRLF & _
+";;                                                    ;;" & @CRLF & _
+";;  [hotkey1]                                         ;;" & @CRLF & _
+";;  keys=0x0011                                       ;;" & @CRLF & _
+";;  command=start steam://open/bigpicture             ;;" & @CRLF & _
+";;                                                    ;;" & @CRLF & _
+";;  For additional hotkeys you have to create         ;;" & @CRLF & _
+";;  sections with continuous numeration like          ;;" & @CRLF & _
+";;  [hotkey2], [hotkey3] and so on.                   ;;" & @CRLF & _
+";;                                                    ;;" & @CRLF & _
+";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;" & @CRLF & _
 "" & @CRLF
 
 
@@ -341,8 +344,8 @@ func ReadIni()
 		if $hFileOpen <> -1 then
 			FileWrite( $hFileOpen, $INI_HEADER_TEXT )
 			FileClose( $hFileOpen )
-			IniWrite( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME & "X", $INI_HOTKEY_KEYS_NAME, "0x" & Hex( $INI_HOTKEY_KEYS_DEFAULT, 4 ) )
-			IniWrite( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME & "X", $INI_HOTKEY_COMMAND_NAME, $INI_HOTKEY_COMMAND_DEFAULT )
+			IniWrite( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME & "_example", $INI_HOTKEY_KEYS_NAME, "0x" & Hex( $INI_HOTKEY_KEYS_DEFAULT, 4 ) )
+			IniWrite( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME & "_example", $INI_HOTKEY_COMMAND_NAME, $INI_HOTKEY_COMMAND_DEFAULT )
 		endif
 	endif
 	if Ubound( $hotkeyList ) > 0 then
