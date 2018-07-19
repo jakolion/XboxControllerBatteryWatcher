@@ -326,10 +326,13 @@ func ReadIni()
 			if $commandStr = "" then
 				$sectionFound = false
 			else
-				local $dict = ObjCreate( "Scripting.Dictionary" )
-				$dict.Add( $INI_HOTKEY_KEYS_NAME, Number( IniRead( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME & $sectionIndex, $INI_HOTKEY_KEYS_NAME, 0 ) ) )
-				$dict.Add( $INI_HOTKEY_COMMAND_NAME, $commandStr )
-				_ArrayAdd( $hotkeyList, $dict )
+				local $keys = Number( IniRead( @ScriptDir & "\" & $INI_FILE_NAME, $INI_HOTKEY_SECTION_NAME & $sectionIndex, $INI_HOTKEY_KEYS_NAME, 0 ) )
+				if $keys > 0 then
+					local $dict = ObjCreate( "Scripting.Dictionary" )
+					$dict.Add( $INI_HOTKEY_KEYS_NAME, $keys )
+					$dict.Add( $INI_HOTKEY_COMMAND_NAME, $commandStr )
+					_ArrayAdd( $hotkeyList, $dict )
+				endif
 			endif
 		wend
 	else
@@ -393,7 +396,7 @@ endfunc
 
 
 func CheckHotkey()
-	if Ubound( $hotkeyList ) > 0 then
+	if $wasConnected and Ubound( $hotkeyList ) > 0 then
 		$buttonStatus = GetXboxButtonStatus()
 		for $i = 0 to Ubound( $hotkeyList ) - 1
 			if XboxButtonIsPressed( $hotkeyList[$i]( $INI_HOTKEY_KEYS_NAME ), $buttonStatus ) then
