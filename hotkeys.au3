@@ -105,13 +105,23 @@ func GetXboxButtonStatus( $controllerIndex )
 	$struct = DllStructCreate( "dword;short;ubyte;ubyte;short;short;short;short" )
 	$pointer = DllStructGetPtr( $struct )
 	DllCall( "xinput1_3.dll", "dword", "XInputGetState", "dword", $controllerIndex, "ptr", $pointer )
-	return DllStructGetData( $struct, 2 )
+	$result = DllStructGetData( $struct, 2 )
+	; for some reason pressing GAMEPAD_Y returns -32768
+	; therefore we change these bits to 32768 (0x8000)
+	if Number( BitAND( -32768, $result ) <> 0 ) then
+		; reset bits for -32768
+		$flippedGamepadY = BitNOT( -32768 )
+		$result = BitAND( $flippedGamepadY, $result )
+		; set bits for 32768 (0x8000)
+		$result = BitOR( 0x8000, $result )
+	endif
+	return $result
 endfunc
 
 
 
 func XboxButtonIsPressed( $key, $buttonStatus )
-	if $key < 16385 then
+	if $key < 65536 then
 		return Number( BitXOR( $key, $buttonStatus ) = 0 )
 	endif
     return false
