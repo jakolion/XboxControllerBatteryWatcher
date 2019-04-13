@@ -129,19 +129,23 @@ endfunc
 
 
 
-func CheckHotkey( $controllerIndex )
-	if $isConnected and Ubound( $hotkeyList ) > 0 and $controllerIndex >= 0 then
-		$buttonStatus = GetXboxButtonStatus( $controllerIndex )
-		for $i = 0 to Ubound( $hotkeyList ) - 1
-			if XboxButtonIsPressed( $hotkeyList[$i]( $INI_HOTKEY_KEYS_NAME ), $buttonStatus ) then
-				ShowHotkeyDetected()
-				Run( @ComSpec & " /c " & $hotkeyList[$i]( $INI_HOTKEY_COMMAND_NAME ), @ScriptDir, @SW_HIDE )
+func CheckHotkey()
+	if Ubound( $hotkeyList ) > 0 then
+		for $controllerIndex = 0 to $MAX_CONTROLLERS - 1
+			if $controllerIsConnected[$controllerIndex] then
 				$buttonStatus = GetXboxButtonStatus( $controllerIndex )
-				while XboxButtonIsPressed( $hotkeyList[$i]( $INI_HOTKEY_KEYS_NAME ), $buttonStatus )
-					sleep( 250 )
-					$buttonStatus = GetXboxButtonStatus( $controllerIndex )
-				wend
-				ExitLoop
+				for $i = 0 to Ubound( $hotkeyList ) - 1
+					if XboxButtonIsPressed( $hotkeyList[$i]( $INI_HOTKEY_KEYS_NAME ), $buttonStatus ) then
+						ShowHotkeyDetected()
+						Run( @ComSpec & " /c " & $hotkeyList[$i]( $INI_HOTKEY_COMMAND_NAME ), @ScriptDir, @SW_HIDE )
+						$buttonStatus = GetXboxButtonStatus( $controllerIndex )
+						while XboxButtonIsPressed( $hotkeyList[$i]( $INI_HOTKEY_KEYS_NAME ), $buttonStatus )
+							sleep( 250 )
+							$buttonStatus = GetXboxButtonStatus( $controllerIndex )
+						wend
+						ExitLoop
+					endif
+				next
 			endif
 		next
 	endif

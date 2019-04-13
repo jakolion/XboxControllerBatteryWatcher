@@ -1,48 +1,9 @@
-const $XBOX_CONTROLLER_TYPE_DISCONNECTED = 0
-const $XBOX_CONTROLLER_TYPE_WIRED = 1
-const $XBOX_CONTROLLER_TYPE_ALKALINE = 2
-const $XBOX_CONTROLLER_TYPE_NIMH = 3
-const $XBOX_CONTROLLER_TYPE_UNKNOWN = 255
-const $XBOX_CONTROLLER_LEVEL_EMPTY = 0
-const $XBOX_CONTROLLER_LEVEL_LOW = 1
-const $XBOX_CONTROLLER_LEVEL_MEDIUM = 2
-const $XBOX_CONTROLLER_LEVEL_FULL = 3
+dim $showInfoQueue[$MAX_CONTROLLERS][2]
 
-const $BATTERY_POLLING_DELAY = 5000
-const $MESSAGE_SHOW_DELAY = 10000
-
-const $FADING_REFRESH_RATE = 33 ; 16 = 60fps | 33 = 30fps
-const $FADING_STEPS = 256
-const $FADING_TARGET_SHOW = $FADING_STEPS - 1
-const $FADING_TARGET_HIDE = 0
-const $FADING_TARGET_TRANSPARENT = 128
-const $FADING_IN_SPEED = 500
-const $FADING_OUT_SPEED = 250
-const $FADING_IN_STEPS_PER_REFRESH = $FADING_STEPS / ( $FADING_IN_SPEED / $FADING_REFRESH_RATE )
-const $FADING_OUT_STEPS_PER_REFRESH = $FADING_STEPS / ( $FADING_OUT_SPEED / $FADING_REFRESH_RATE )
-
-const $SHOW_INFO_ON_FULLSCREEN_EXIT = false
-
-local $isConnected = false
-local $wasWarnedLow = false
-local $wasWarnedEmpty = false
-local $batteryInfo
-local $wasFullscreen = false
-local $lastBatteryLevel
-local $storedText
-local $storedBatteryLevel
-local $fadingStatus = ""
-local $fadingTarget = $FADING_TARGET_HIDE
-local $waitingForMouseOver = false
-local $mouseOver = false
-local $waitingForMouseOver = false
-local $fadingIsRunning = false
-local $fadingStopRequested = false
-local $currentIcon = ""
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+local $dialogCurrentlyShown
+local $dialogCurrentlyShownControllerIndex
+local $dialogCurrentlyShownText
+local $dialogCurrentlyShownBatteryLevel
 
 
 
@@ -100,25 +61,22 @@ GUISetState( @SW_SHOW, $gui )
 
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
 func GetXboxGetBatteryLevel()
-	dim $return[3]
-	$return[0] = $XBOX_CONTROLLER_TYPE_DISCONNECTED
-	$return[1] = $XBOX_CONTROLLER_LEVEL_EMPTY
-	$return[2] = -1
+	dim $return[$MAX_CONTROLLERS]
 	$struct = DllStructCreate( "byte type;byte level" )
 	$pointer = DllStructGetPtr( $struct )
-	for $controllerIndex = 0 to 3
+	for $controllerIndex = 0 to $MAX_CONTROLLERS - 1
+		dim $info[3]
+		$info[0] = $XBOX_CONTROLLER_TYPE_DISCONNECTED
+		$info[1] = $XBOX_CONTROLLER_LEVEL_EMPTY
+		$info[2] = -1
 		DllCall( "xinput1_3.dll", "dword", "XInputGetBatteryInformation", "dword", $controllerIndex, "byte", 0x00, "ptr", $pointer )
-		$return[0] = DllStructGetData( $struct, "type" )
-		if $return[0] <> $XBOX_CONTROLLER_TYPE_DISCONNECTED then
-			$return[1] = DllStructGetData( $struct, "level" )
-			$return[2] = $controllerIndex
-			ExitLoop
+		$info[0] = DllStructGetData( $struct, "type" )
+		if $info[0] <> $XBOX_CONTROLLER_TYPE_DISCONNECTED then
+			$info[1] = DllStructGetData( $struct, "level" )
+			$info[2] = $controllerIndex
 		endif
+		$return[$controllerIndex] = $info
 	next
 	return $return
 endfunc
@@ -161,27 +119,40 @@ endfunc
 
 
 
-func ShowInfo( $text, $batteryLevel )
+func ShowInfo( $controllerIndex, $text, $batteryLevel )
+	if $controllerIndex <> Null and $text <> Null and $batteryLevel <> Null then
+		if $dialogCurrentlyShown then
+			$showInfoQueue[$controllerIndex][0] = $text
+			$showInfoQueue[$controllerIndex][1] = $batteryLevel
+			return
+		endif
+		$dialogCurrentlyShown = true
+		$dialogCurrentlyShownControllerIndex = $controllerIndex
+		$dialogCurrentlyShownText = $text
+		$dialogCurrentlyShownBatteryLevel = $batteryLevel
+	endif
+
 	AdlibUnRegister( "FadeOutTimer" )
 	AdlibUnRegister( "FadeOutToTransparentTimer" )
+
 	local $fadeOutAfterTimer = true
 	local $x = $GUI_HIDE
 	local $textAddition = ""
-	if $batteryLevel == $XBOX_CONTROLLER_LEVEL_EMPTY or $batteryLevel == $XBOX_CONTROLLER_LEVEL_LOW then
+	if $dialogCurrentlyShownBatteryLevel == $XBOX_CONTROLLER_LEVEL_EMPTY or $dialogCurrentlyShownBatteryLevel == $XBOX_CONTROLLER_LEVEL_LOW then
 		$fadeOutAfterTimer = false
 		$x = $GUI_SHOW
 		$textAddition = "!"
 	endif
 
-	local $newIcon = Level2Icon( $batteryLevel )
+	local $newIcon = Level2Icon( $dialogCurrentlyShownBatteryLevel )
 	if $currentIcon <> $newIcon then
 		GUICtrlSetState( $icons.item( $newIcon ), $GUI_SHOW )
 		GUICtrlSetState( $icons.item( $currentIcon ), $GUI_HIDE )
 		$currentIcon = $newIcon
 	endif
 
-	GUICtrlSetData( $labelTop, $text )
-	GUICtrlSetData( $labelBottom, _StringProper( Level2Text( $batteryLevel ) ) & $textAddition )
+	GUICtrlSetData( $labelTop, $dialogCurrentlyShownText )
+	GUICtrlSetData( $labelBottom, _StringProper( Level2Text( $dialogCurrentlyShownBatteryLevel ) ) & $textAddition )
 	GUICtrlSetState( $labelX, $x )
 
 	$fadingStatus = "in"
@@ -226,6 +197,16 @@ func GuiFade()
 			WinSetTrans( $gui, "", $currentWinTrans )
 			if $currentWinTrans == $fadingTarget then
 				$fadingStatus = ""
+				if $currentWinTrans == $FADING_TARGET_HIDE then
+					$dialogCurrentlyShown = false
+					for $x = 0 to $MAX_CONTROLLERS - 1
+						if $showInfoQueue[$x][0] <> "" then
+							ShowInfo( $x, $showInfoQueue[$x][0], $showInfoQueue[$x][1] )
+							$showInfoQueue[$x][0] = ""
+							ExitLoop
+						endif
+					next
+				endif
 			else
 				Sleep( $FADING_REFRESH_RATE )
 			endif
