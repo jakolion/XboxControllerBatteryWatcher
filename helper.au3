@@ -20,8 +20,8 @@ endfunc
 
 func GetVersion()
 	$fullVersion = FileGetVersion( @AutoItExe )
-	$secondDotPos = StringInStr( $fullVersion, ".", $STR_NOCASESENSEBASIC, 2 )
-	return StringMid( $fullVersion, 1, $secondDotPos - 1 )
+	$EndPos = StringInStr( $fullVersion, ".", $STR_NOCASESENSEBASIC, 3 )
+	return StringMid( $fullVersion, 1, $EndPos - 1 )
 endfunc
 
 
