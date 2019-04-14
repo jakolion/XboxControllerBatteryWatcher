@@ -121,7 +121,7 @@ endfunc
 
 func ShowInfo( $controllerIndex, $text, $batteryLevel )
 	if $controllerIndex <> Null and $text <> Null and $batteryLevel <> Null then
-		if $dialogCurrentlyShown then
+		if $dialogCurrentlyShown and $dialogCurrentlyShownControllerIndex <> $controllerIndex then
 			$showInfoQueue[$controllerIndex][0] = $text
 			$showInfoQueue[$controllerIndex][1] = $batteryLevel
 			return
